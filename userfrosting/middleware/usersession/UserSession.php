@@ -38,6 +38,10 @@ class UserSession extends \Slim\Middleware {
                 // If not, we log out the current session
                 if(!empty($_COOKIE[$this->app->remember_me->getCookieName()]) && !$this->app->remember_me->cookieIsValid()) {
                     //error_log("Session expired. logging out...");
+                    // Change cookie path
+                    $cookie = $this->_app->remember_me->getCookie();
+                    $cookie->setPath("/");
+                    $this->_app->remember_me->setCookie($cookie);                    
                     $this->app->remember_me->clearCookie();
                     throw new AuthExpiredException();
                 }
@@ -51,9 +55,9 @@ class UserSession extends \Slim\Middleware {
                 error_log("Trying to log in via cookie: " . print_r($_COOKIE, true));
                 $user_id = $this->app->remember_me->login();
                 
+                // Change cookie path
                 $cookie = $this->app->remember_me->getCookie();
-                $cookie->setDomain('/');
-                $cookie->setPath('/');
+                $cookie->setPath("/");
                 $this->app->remember_me->setCookie($cookie);
                 
                 if($user_id) {

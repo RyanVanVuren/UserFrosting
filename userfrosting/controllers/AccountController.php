@@ -233,13 +233,8 @@ class AccountController extends \UserFrosting\BaseController {
             if(!empty($data['rememberme'])) {
                 //error_log("Creating user cookie for " . $user->id);
                 $this->_app->remember_me->createCookie($user->id);
-                $cookie = $this->_app->remember_me->getCookieName();
-                $environment = $this->_app->environment();
-
-                $domain = $environment['slim.url_scheme'] . "://" . $environment['SERVER_NAME'];
-
-                
-                $cookie->setDomain("/");
+                // Change cookie path
+                $cookie = $this->_app->remember_me->getCookie();
                 $cookie->setPath("/");
                 $this->_app->remember_me->setCookie($cookie);
             } else {
@@ -260,7 +255,7 @@ class AccountController extends \UserFrosting\BaseController {
     }
     
     public function logout($complete = false){
-        error_log("Logout controller");
+        error_log("Logging the user out...");
         if ($complete){
             $storage = new \Birke\Rememberme\Storage\PDO($this->_app->remember_me_table);
             $storage->setConnection(Database::connection());
