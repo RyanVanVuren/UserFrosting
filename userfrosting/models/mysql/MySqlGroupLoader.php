@@ -14,7 +14,7 @@ class MySqlGroupLoader extends MySqlObjectLoader implements GroupLoaderInterface
      * @return bool
     */
     public static function exists($value, $name = "id"){
-        return parent::fetch($value, $name);
+        return parent::exists($value, $name);
     }
    
     /* Fetch a single group based on the value of a given column.  For non-unique columns, it will return the first entry found.  Returns false if no match is found.

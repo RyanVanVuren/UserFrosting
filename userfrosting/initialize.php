@@ -108,7 +108,6 @@ $app->remember_me_table = [
     'expiresColumn' => 'expires'
 ];
 
-
 /* Load UserFrosting site settings */
 
 // Default settings
@@ -162,7 +161,10 @@ if (!$app->site->isConsistent()){
 $app->schema = new \UserFrosting\PageSchema($app->site->uri['css'], $app->config('css.path') , $app->site->uri['js'], $app->config('js.path') );
 
 // Create a guest user, which lets us proceed until we can try to authenticate the user
-$app->user = new \UserFrosting\User([], $app->config('user_id_guest'));
+$app->setupGuestEnvironment();
+
+// Setup Twig custom functions
+$app->setupTwig();
 
 /** Register site settings with site settings config page */
 $app->hook('settings.register', function () use ($app){
@@ -247,6 +249,7 @@ $app->hook('includes.js.register', function () use ($app){
 
 /** Plugins */
 $app->hook('plugins.register', function () use ($app){
+    error_log("Registering plugins");
     // Run initialization scripts for plugins
     $var_plugins = $app->site->getPlugins();
     foreach($var_plugins as $var_plugin) {     

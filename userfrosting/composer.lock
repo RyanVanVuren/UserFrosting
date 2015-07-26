@@ -55,12 +55,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/gbirke/rememberme.git",
-                "reference": "6e7fe6a396eb48ecd812fdd54ffc5579cb29e67e"
+                "reference": "4e71b0d9c692db28ae78c7eea752c4599b87dc2c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/gbirke/rememberme/zipball/6e7fe6a396eb48ecd812fdd54ffc5579cb29e67e",
-                "reference": "6e7fe6a396eb48ecd812fdd54ffc5579cb29e67e",
+                "url": "https://api.github.com/repos/gbirke/rememberme/zipball/4e71b0d9c692db28ae78c7eea752c4599b87dc2c",
+                "reference": "4e71b0d9c692db28ae78c7eea752c4599b87dc2c",
                 "shasum": ""
             },
             "require-dev": {
@@ -89,7 +89,7 @@
                 "remember",
                 "security"
             ],
-            "time": "2015-05-18 12:07:45"
+            "time": "2015-07-22 18:26:14"
         },
         {
             "name": "ezyang/htmlpurifier",

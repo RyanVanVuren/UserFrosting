@@ -231,13 +231,25 @@ class AccountController extends \UserFrosting\BaseController {
             session_regenerate_id();
             // If the user wants to be remembered, create Rememberme cookie
             if(!empty($data['rememberme'])) {
+                //error_log("Creating user cookie for " . $user->id);
                 $this->_app->remember_me->createCookie($user->id);
+                $cookie = $this->_app->remember_me->getCookieName();
+                $environment = $this->_app->environment();
+
+                $domain = $environment['slim.url_scheme'] . "://" . $environment['SERVER_NAME'];
+
+                
+                $cookie->setDomain("/");
+                $cookie->setPath("/");
+                $this->_app->remember_me->setCookie($cookie);
             } else {
                 $this->_app->remember_me->clearCookie();
             }            
             // Create the session
             $_SESSION["userfrosting"]["user"] = $user;
             $this->_app->user = $_SESSION["userfrosting"]["user"];
+            // Setup logged in user environment
+            $this->_app->setupAuthenticatedEnvironment();
             $ms->addMessageTranslated("success", "ACCOUNT_WELCOME", $this->_app->user->export());
         } else {
             //Again, we know the password is at fault here, but lets not give away the combination in case of someone bruteforcing
@@ -248,6 +260,7 @@ class AccountController extends \UserFrosting\BaseController {
     }
     
     public function logout($complete = false){
+        error_log("Logout controller");
         if ($complete){
             $storage = new \Birke\Rememberme\Storage\PDO($this->_app->remember_me_table);
             $storage->setConnection(Database::connection());
@@ -256,6 +269,7 @@ class AccountController extends \UserFrosting\BaseController {
             $this->_app->remember_me->clearCookie($this->_app->user->id);
         }
         session_regenerate_id(true);
+        error_log("destroying session");
         session_destroy();        
         $this->_app->redirect($this->_app->site->uri['public']);
     }
@@ -793,7 +807,14 @@ class AccountController extends \UserFrosting\BaseController {
     public function captcha(){
         echo $this->generateCaptcha();
     }
-    
-        }
-    
-?>
+ 
+    public function pageAccountCompromised(){
+        $this->_app->render('common/compromised.html', [
+            'page' => [
+                'author' =>         $this->_app->site->author,
+                'title' =>          "Your account may have been compromised",
+                'description' =>    "Your account may have been compromised.  You have been logged out for your safety."
+            ]
+        ]);
+    }
+}

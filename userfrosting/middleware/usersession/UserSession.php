@@ -10,6 +10,8 @@ class UserSession extends \Slim\Middleware {
      * @return void
      */
     public function call() {
+        // TODO: Register error-handlers?   
+        
         // Attach as hook.
         $this->app->hook('slim.before', array($this, 'setup'));
 
@@ -20,34 +22,42 @@ class UserSession extends \Slim\Middleware {
     public function setup(){       
         // Test database connection
         try {          
+            error_log("Setting up user session");
             $storage = new \Birke\Rememberme\Storage\PDO($this->app->remember_me_table);
             $storage->setConnection(Database::connection());
             $this->app->remember_me = new \Birke\Rememberme\Authenticator($storage);
             
-            // First, initialize the PHP session
-            session_start();
             // Determine if we are already logged in (user exists in the session variable)
             if(isset($_SESSION["userfrosting"]["user"]) && is_object($_SESSION["userfrosting"]["user"])) {       
-                error_log("Current user id is " . $_SESSION["userfrosting"]["user"]->id);
+                // User is still logged in - refresh the user.  If they don't exist any more, then an exception will be thrown.
+                $_SESSION["userfrosting"]["user"] = $_SESSION["userfrosting"]["user"]->fresh();
+                $this->app->user = $_SESSION["userfrosting"]["user"];                
+                
+                //error_log("Current user id is " . $_SESSION["userfrosting"]["user"]->id);
                 // Check, if the Rememberme cookie exists and is still valid.
                 // If not, we log out the current session
                 if(!empty($_COOKIE[$this->app->remember_me->getCookieName()]) && !$this->app->remember_me->cookieIsValid()) {
-                    error_log("Logging out");
-                    $controller = new AccountController($this->app);
-                    $controller->logout(true);
-                    exit;
-                    //$this->app->redirect($this->app->site->uri['public'] . "/account/logout");
+                    //error_log("Session expired. logging out...");
+                    $this->app->remember_me->clearCookie();
+                    throw new AuthExpiredException();
                 }
-                
-                // User is still logged in - refresh the user.  If they don't exist any more, then an exception will be thrown.
-                $_SESSION["userfrosting"]["user"] = $_SESSION["userfrosting"]["user"]->fresh();
-                $this->app->user = $_SESSION["userfrosting"]["user"];
             // If not, try to login via RememberMe cookie
             } else {
                 // If we can present the correct tokens from the cookie, log the user in
                 // Get the user id
+                $name = $this->app->remember_me->getCookieName();
+                error_log("Cookie is called $name");
+                
+                error_log("Trying to log in via cookie: " . print_r($_COOKIE, true));
                 $user_id = $this->app->remember_me->login();
+                
+                $cookie = $this->app->remember_me->getCookie();
+                $cookie->setDomain('/');
+                $cookie->setPath('/');
+                $this->app->remember_me->setCookie($cookie);
+                
                 if($user_id) {
+                    error_log("Logging in via remember me for $user_id");
                     // Load the user
                     $_SESSION["userfrosting"]["user"] = \UserFrosting\UserLoader::fetch($user_id);
                     $this->app->user = $_SESSION["userfrosting"]["user"];
@@ -55,31 +65,21 @@ class UserSession extends \Slim\Middleware {
                     // the fact that the user was logged in via RememberMe (instead of login form)
                     $_SESSION['remembered_by_cookie'] = true;
                 } else {
+                    error_log("Cookie not found in db");
                     // If $rememberMe returned false, check if the token was invalid
                     if($this->app->remember_me->loginTokenWasInvalid()) {
-                        // TODO: redirect to a "cookie was stolen" page
-                        $this->app->halt(403);
-                        error_log("Cookie was stolen!");
-                        //$content = tpl("cookie_was_stolen");
+                        //error_log("Cookie was stolen!");
+                        throw new AuthCompromisedException();
                     } else {
                         // $rememberMe returned false because of invalid/missing Rememberme cookie - create a dummy "guest" user
                         $this->app->user = new User([], $this->app->config('user_id_guest'));
                     }
                 }
             }
+            // Now we have an authenticated user, setup their environment
+            $this->app->setupAuthenticatedEnvironment();
         } catch (\PDOException $e) {
-            // If the database doesn't exist yet, then use a guest user
-            error_log("Error in " . $e->getFile() . " on line " . $e->getLine() . ": " . $e->getMessage());
-            error_log($e->getTraceAsString());
-            $this->app->user = new User([], $this->app->config('user_id_guest'));
-            // In case the error is because someone is trying to reinstall with new db info while still logged in, log them out
-            session_destroy();
-            $controller = new BaseController($this->app);
-            $controller->pageDatabaseError();
-            exit;
+            throw new DatabaseInvalidException($e->getMessage(), $e->getCode(), $e);
         }        
-        
-        $this->app->setupMessageEnvironment();
-        $this->app->setupTwig();
     }
 }

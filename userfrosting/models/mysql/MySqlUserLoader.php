@@ -14,7 +14,7 @@ class MySqlUserLoader extends MySqlObjectLoader implements UserLoaderInterface {
      * @return bool
     */
     public static function exists($value, $name = "id"){
-        return parent::fetch($value, $name);
+        return parent::exists($value, $name);
     }
    
     /* Fetch a single user based on the value of a given column.  For non-unique columns, it will return the first entry found.  Returns false if no match is found.

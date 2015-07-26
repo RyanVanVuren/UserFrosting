@@ -11,7 +11,9 @@
     // Use native PHP sessions
     session_cache_limiter(false);
     session_name("UserFrosting");  
-    
+    // First, initialize the PHP session
+    session_start();
+            
     /* Instantiate the Slim application */
     $app = new \UserFrosting\UserFrosting([
         'view' =>           new \Slim\Views\Twig(),
@@ -30,7 +32,7 @@
     $app->configureMode('dev', function () use ($app, $public_path, $uri_public_root) {
         $app->config([
             'log.enable' => true,
-            'debug' => true,
+            'debug' => false,
             'base.path'     => __DIR__,            
             'templates.path' => __DIR__ . '/templates',
             'themes.path'    =>  __DIR__ . '/templates/themes',
